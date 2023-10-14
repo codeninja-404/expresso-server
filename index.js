@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -26,10 +26,47 @@ async function run() {
     await client.connect();
     const database = client.db("coffeeDB");
     const coffeeCollection = database.collection("coffee");
+    app.get("/coffee", async (req, res) => {
+      const cursor = coffeeCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    app.get("/coffee/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await coffeeCollection.findOne(query);
+      res.send(result);
+    });
+
     app.post("/coffee", async (req, res) => {
       const newCoffee = req.body;
       console.log(newCoffee);
       const result = await coffeeCollection.insertOne(newCoffee);
+      res.send(result);
+    });
+    app.put("/coffee/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedCoffee = req.body;
+      const coffee = {
+        $set: {
+          name: updatedCoffee.name,
+          quantity: updatedCoffee.quantity,
+          supplier: updatedCoffee.supplier,
+          taste: updatedCoffee.taste,
+          category: updatedCoffee.category,
+          details: updatedCoffee.details,
+          photo: updatedCoffee.photo,
+        },
+      };
+      const result = await coffeeCollection.updateOne(filter, coffee, options);
+      res.send(result);
+    });
+    app.delete("/coffee/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await coffeeCollection.deleteOne(query);
       res.send(result);
     });
     // Send a ping to confirm a successful connection
@@ -51,3 +88,10 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Expresso server is running on port : ${port}`);
 });
+
+// https://i.ibb.co/Tq66TNd/1.jpg
+// https://i.ibb.co/mBj2X8n/2.jpg
+// https://i.ibb.co/mX65YxC/3.jpg
+// https://i.ibb.co/t2Cw6wm/4.jpg
+// https://i.ibb.co/hXLrMD2/5.jpg
+// https://i.ibb.co/kSH9Z3w/6.jpg
